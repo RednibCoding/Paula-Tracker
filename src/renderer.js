@@ -41,11 +41,13 @@ export class Renderer {
         this.ui.text(`POS: `, 340, y + 3, 'text');
         this.ui.hex(this.tracker.audio.getState().position, 385, y + 3, 2, 'yellow');
         
+        // Display live tempo/BPM from audio engine (updates with Fxx effects)
+        const playState = this.tracker.audio.getState();
         this.ui.text(`TEMPO: `, 425, y + 3, 'text');
-        this.ui.hex(this.tracker.song.tempo, 495, y + 3, 2, 'yellow');
+        this.ui.hex(playState.tempo, 495, y + 3, 2, 'yellow');
         
         this.ui.text(`BPM: `, 535, y + 3, 'text');
-        this.ui.hex(this.tracker.song.bpm, 580, y + 3, 3, 'yellow');
+        this.ui.hex(playState.bpm, 580, y + 3, 3, 'yellow');
     }
     
     /**

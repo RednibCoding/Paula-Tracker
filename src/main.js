@@ -267,17 +267,21 @@ class PaulaTracker {
             this.currentPattern = playingPattern;
             this.currentSeqPos = playState.position;
             
-            // Center the playing row (start scrolling after row 9)
-            const centerRow = Math.floor(this.visibleRows / 2);
-            if (playState.row > centerRow) {
-                this.scrollOffset = Math.max(0, Math.min(64 - this.visibleRows, 
-                    playState.row - centerRow));
-            } else {
-                this.scrollOffset = 0;
+            // Only auto-scroll if NOT in pattern loop mode
+            // This allows editing while listening in loop mode
+            if (!playState.patternLoop) {
+                // Center the playing row (start scrolling after row 9)
+                const centerRow = Math.floor(this.visibleRows / 2);
+                if (playState.row > centerRow) {
+                    this.scrollOffset = Math.max(0, Math.min(64 - this.visibleRows, 
+                        playState.row - centerRow));
+                } else {
+                    this.scrollOffset = 0;
+                }
+                
+                // Auto-scroll sequencer to keep playing position visible
+                this.updateSequencerScroll();
             }
-            
-            // Auto-scroll sequencer to keep playing position visible
-            this.updateSequencerScroll();
         }
         
         this.ui.clear();
