@@ -70,9 +70,9 @@ export class WebAudioAdapter {
     /**
      * Start playback
      */
-    play(position = 0) {
+    play(position = 0, startRow = 0) {
         this.resume();
-        this.engine.play(position);
+        this.engine.play(position, startRow);
     }
     
     /**
@@ -108,6 +108,13 @@ export class WebAudioAdapter {
      */
     toggleChannelMute(channel) {
         this.engine.toggleMute(channel);
+    }
+    
+    /**
+     * Toggle pattern loop mode
+     */
+    togglePatternLoop() {
+        return this.engine.togglePatternLoop();
     }
     
     /**

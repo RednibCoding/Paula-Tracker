@@ -847,4 +847,12 @@ export class PaulaEngine {
     toggleMute(channel) {
         this.mutedChannels[channel] = !this.mutedChannels[channel];
     }
+    
+    /**
+     * Toggle pattern loop mode
+     */
+    togglePatternLoop() {
+        this.patternLoopMode = !this.patternLoopMode;
+        return this.patternLoopMode;
+    }
 }
