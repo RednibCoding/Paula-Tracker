@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TinyTracker Demo</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #222;
+            color: #0f0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #0ff;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .info {
+            background: #111;
+            border: 2px solid #0f0;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .controls {
+            background: #111;
+            border: 2px solid #0ff;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #0ff;
+        }
+        
+        button:active {
+            background: #ff0;
+        }
+        
+        .mute-btn {
+            background: #f00;
+        }
+        
+        .mute-btn.active {
+            background: #555;
+            color: #888;
+        }
+        
+        .channels {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .channel {
+            background: #111;
+            border: 2px solid #0f0;
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .channel h3 {
+            margin: 0 0 10px 0;
+            color: #0ff;
+        }
+        
+        .state {
+            margin-top: 20px;
+            padding: 10px;
+            background: #111;
+            border: 2px solid #ff0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 TinyTracker Demo 🎵</h1>
+        
+        <div class="info">
+            <h2>Simple Chip-Tune Synth Engine</h2>
+            <p>4 Channels: Square, Sawtooth, Sine, Noise</p>
+            <p>Built-in ADSR envelopes and basic effects</p>
+        </div>
+        
+        <div class="controls">
+            <h3>Playback Controls</h3>
+            <button id="play">▶ Play</button>
+            <button id="stop">⏹ Stop</button>
+            <button id="demo1">Demo 1: Chords</button>
+            <button id="demo2">Demo 2: Arpeggio</button>
+            <button id="demo3">Demo 3: Melody</button>
+        </div>
+        
+        <div class="channels">
+            <div class="channel">
+                <h3>Square</h3>
+                <button class="mute-btn" data-channel="0">Mute</button>
+            </div>
+            <div class="channel">
+                <h3>Sawtooth</h3>
+                <button class="mute-btn" data-channel="1">Mute</button>
+            </div>
+            <div class="channel">
+                <h3>Sine</h3>
+                <button class="mute-btn" data-channel="2">Mute</button>
+            </div>
+            <div class="channel">
+                <h3>Noise</h3>
+                <button class="mute-btn" data-channel="3">Mute</button>
+            </div>
+        </div>
+        
+        <div class="state">
+            <h3>Engine State</h3>
+            <div id="state">Not playing</div>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { TinySong, TinyPattern, TinyInstrument } from './engine/audio-engine.js';
+        import { WebAudioAdapter } from './platform/audio-web.js';
+        
+        const audio = new WebAudioAdapter();
+        await audio.init();
+        
+        // Create demo songs
+        function createDemo1() {
+            const song = new TinySong();
+            song.title = 'Demo 1: Chords';
+            
+            // Configure instruments
+            song.instruments[0].attack = 0.05;
+            song.instruments[0].decay = 0.1;
+            song.instruments[0].sustain = 0.6;
+            song.instruments[0].release = 0.3;
+            song.instruments[0].dutyCycle = 0.5;
+            
+            song.instruments[1].attack = 0.01;
+            song.instruments[1].decay = 0.2;
+            song.instruments[1].sustain = 0.4;
+            song.instruments[1].release = 0.2;
+            
+            song.instruments[2].attack = 0.1;
+            song.instruments[2].decay = 0.1;
+            song.instruments[2].sustain = 0.7;
+            song.instruments[2].release = 0.3;
+            
+            const pattern = song.patterns[0];
+            
+            // C major chord (C4, E4, G4)
+            pattern.getNote(0, 0).note = 48; // C4
+            pattern.getNote(0, 0).instrument = 0;
+            
+            pattern.getNote(0, 1).note = 52; // E4
+            pattern.getNote(0, 1).instrument = 1;
+            
+            pattern.getNote(0, 2).note = 55; // G4
+            pattern.getNote(0, 2).instrument = 2;
+            
+            // F major chord
+            pattern.getNote(8, 0).note = 53; // F4
+            pattern.getNote(8, 0).instrument = 0;
+            
+            pattern.getNote(8, 1).note = 57; // A4
+            pattern.getNote(8, 1).instrument = 1;
+            
+            pattern.getNote(8, 2).note = 60; // C5
+            pattern.getNote(8, 2).instrument = 2;
+            
+            // G major chord
+            pattern.getNote(16, 0).note = 55; // G4
+            pattern.getNote(16, 0).instrument = 0;
+            
+            pattern.getNote(16, 1).note = 59; // B4
+            pattern.getNote(16, 1).instrument = 1;
+            
+            pattern.getNote(16, 2).note = 62; // D5
+            pattern.getNote(16, 2).instrument = 2;
+            
+            // C major chord
+            pattern.getNote(24, 0).note = 48; // C4
+            pattern.getNote(24, 0).instrument = 0;
+            
+            pattern.getNote(24, 1).note = 52; // E4
+            pattern.getNote(24, 1).instrument = 1;
+            
+            pattern.getNote(24, 2).note = 55; // G4
+            pattern.getNote(24, 2).instrument = 2;
+            
+            return song;
+        }
+        
+        function createDemo2() {
+            const song = new TinySong();
+            song.title = 'Demo 2: Arpeggio';
+            
+            const pattern = song.patterns[0];
+            
+            // Arpeggio effect (0xy)
+            pattern.getNote(0, 0).note = 48; // C4
+            pattern.getNote(0, 0).instrument = 0;
+            pattern.getNote(0, 0).effect = 0x0;
+            pattern.getNote(0, 0).param = 0x47; // Major chord (4 semitones, 7 semitones)
+            
+            pattern.getNote(8, 1).note = 53; // F4
+            pattern.getNote(8, 1).instrument = 1;
+            pattern.getNote(8, 1).effect = 0x0;
+            pattern.getNote(8, 1).param = 0x47;
+            
+            pattern.getNote(16, 2).note = 55; // G4
+            pattern.getNote(16, 2).instrument = 2;
+            pattern.getNote(16, 2).effect = 0x0;
+            pattern.getNote(16, 2).param = 0x47;
+            
+            return song;
+        }
+        
+        function createDemo3() {
+            const song = new TinySong();
+            song.title = 'Demo 3: Melody';
+            
+            const pattern = song.patterns[0];
+            const melody = [48, 50, 52, 53, 55, 57, 59, 60]; // C major scale
+            
+            for (let i = 0; i < melody.length; i++) {
+                pattern.getNote(i * 4, 0).note = melody[i];
+                pattern.getNote(i * 4, 0).instrument = 0;
+            }
+            
+            // Add bass line
+            pattern.getNote(0, 1).note = 36; // C3
+            pattern.getNote(0, 1).instrument = 1;
+            
+            pattern.getNote(16, 1).note = 41; // F3
+            pattern.getNote(16, 1).instrument = 1;
+            
+            // Add rhythm (noise channel)
+            for (let i = 0; i < 32; i += 4) {
+                pattern.getNote(i, 3).note = 60;
+                pattern.getNote(i, 3).instrument = 3;
+            }
+            
+            return song;
+        }
+        
+        // UI event handlers
+        document.getElementById('play').addEventListener('click', () => {
+            audio.play();
+        });
+        
+        document.getElementById('stop').addEventListener('click', () => {
+            audio.stop();
+        });
+        
+        document.getElementById('demo1').addEventListener('click', () => {
+            audio.setSong(createDemo1());
+            audio.play();
+        });
+        
+        document.getElementById('demo2').addEventListener('click', () => {
+            audio.setSong(createDemo2());
+            audio.play();
+        });
+        
+        document.getElementById('demo3').addEventListener('click', () => {
+            audio.setSong(createDemo3());
+            audio.play();
+        });
+        
+        // Mute buttons
+        document.querySelectorAll('.mute-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const ch = parseInt(btn.getAttribute('data-channel'));
+                audio.toggleMute(ch);
+                btn.classList.toggle('active');
+            });
+        });
+        
+        // Update state display
+        setInterval(() => {
+            const state = audio.getState();
+            const stateDiv = document.getElementById('state');
+            
+            if (state.playing) {
+                stateDiv.innerHTML = `
+                    <strong>Playing</strong><br>
+                    Position: ${state.position}<br>
+                    Row: ${state.row}<br>
+                    BPM: ${state.bpm}<br>
+                    Tempo: ${state.tempo}
+                `;
+            } else {
+                stateDiv.textContent = 'Not playing';
+            }
+        }, 100);
+        
+        // Start with demo 1
+        audio.setSong(createDemo1());
+    </script>
+</body>
+</html>

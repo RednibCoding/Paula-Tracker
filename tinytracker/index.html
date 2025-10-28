@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TinyTracker - Simple Chip-Tune Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+        
+        #canvas {
+            display: block;
+            width: 100%;
+            height: 100vh;
+            object-fit: contain;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        #info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #0f0;
+            padding: 10px;
+            font-size: 12px;
+            border: 1px solid #0f0;
+            border-radius: 4px;
+            max-width: 250px;
+        }
+        
+        #info h3 {
+            color: #0ff;
+            margin-bottom: 5px;
+        }
+        
+        #info p {
+            margin: 3px 0;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas" width="640" height="400"></canvas>
+    
+    <!-- <div id="info">
+        <h3>🎵 TinyTracker</h3>
+        <p><strong>Navigation:</strong></p>
+        <p>↑↓ - Move rows</p>
+        <p>←→ - Move columns</p>
+        <p>PgUp/PgDn - Jump 16 rows</p>
+        <p>Home/End - First/last row</p>
+        <p><br><strong>Editing:</strong></p>
+        <p>Tab - Toggle edit mode</p>
+        <p>Z-M, Q-U, I-P - Note keys</p>
+        <p>0-F - Hex entry</p>
+        <p>Del - Clear cell</p>
+        <p><br><strong>Playback:</strong></p>
+        <p>Space - Play/Stop</p>
+        <p>F5-F8 - Mute channels</p>
+        <p>Ctrl+1-8 - Select instrument</p>
+        <p><br><strong>Channels:</strong></p>
+        <p>0: Square wave</p>
+        <p>1: Sawtooth wave</p>
+        <p>2: Sine wave</p>
+        <p>3: Noise</p>
+    </div> -->
+    
+    <script type="module" src="tracker/main.js"></script>
+</body>
+</html>
