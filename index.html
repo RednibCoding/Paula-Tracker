@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paula Tracker - Amiga 4-Channel Tracker</title>
+    <link rel="icon" type="image/png" href="./public/icon.png">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100vw;
+            height: 100vh;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+        
+        #container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        canvas {
+            box-sizing: border-box;
+            /* border: 4px solid #555; */
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            image-rendering: -moz-crisp-edges;
+            font-smooth: never;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: grayscale;
+            cursor: default;
+            /* Fill entire screen while maintaining aspect ratio */
+            max-width: calc(100vw - 8px);
+            max-height: calc(100vh - 8px);
+            width: calc(100vw - 8px);
+            height: calc(100vh - 8px);
+            object-fit: contain;
+            display: block;
+        }
+        
+        #info {
+            position: fixed;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #D4B896;
+            font-size: 12px;
+            text-align: center;
+            white-space: nowrap;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 5px 15px;
+            border-radius: 3px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <canvas id="tracker" width="640" height="400"></canvas>
+    </div>
+    
+    <script type="module" src="./src/main.js"></script>
+</body>
+</html>
