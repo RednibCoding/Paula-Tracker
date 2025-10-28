@@ -4,7 +4,7 @@
  */
 
 import { KeyboardMap } from './keyboard.js';
-import { PERIOD_TABLE } from '../../../paulalib/audio-engine.js';
+import { PERIOD_TABLE } from '../paulalib/audio-engine.js';
 
 export class NoteEntry {
     constructor(audio) {

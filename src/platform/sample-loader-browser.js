@@ -3,7 +3,7 @@
  * Handles loading audio samples using Web Audio API
  */
 
-import { decodeWAV, audioToInstrument } from '../../../../paulalib/sampleutils.js';
+import { decodeWAV, audioToInstrument } from '../../paulalib/sampleutils.js';
 
 export class BrowserSampleLoader {
     constructor() {

@@ -5,9 +5,9 @@
  */
 
 // PaulaLib - platform-independent core
-import { Song, Note } from '../../../paulalib/data.js';
-import { Clipboard } from '../../../paulalib/clipboard.js';
-import { PERIOD_TABLE, NOTE_NAMES } from '../../../paulalib/audio-engine.js';
+import { Song, Note } from '../paulalib/data.js';
+import { Clipboard } from '../paulalib/clipboard.js';
+import { PERIOD_TABLE, NOTE_NAMES } from '../paulalib/audio-engine.js';
 
 // Platform adapters - browser-specific
 import { WebAudioAdapter } from './platform/audio-web.js';

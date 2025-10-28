@@ -3,7 +3,7 @@
  * Connects PaulaEngine to browser audio output
  */
 
-import { PaulaEngine } from '../../../../paulalib/audio-engine.js';
+import { PaulaEngine } from '../../paulalib/audio-engine.js';
 
 export class WebAudioAdapter {
     constructor() {

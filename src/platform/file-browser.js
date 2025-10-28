@@ -3,7 +3,7 @@
  * Handles loading and saving MOD files using browser APIs
  */
 
-import { loadMOD, saveMOD } from '../../../../paulalib/modloader.js';
+import { loadMOD, saveMOD } from '../../paulalib/modloader.js';
 
 /**
  * Load MOD file from URL (fetch)
