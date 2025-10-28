@@ -30,7 +30,7 @@ export class InputHandler {
                 // If pattern loop mode is on, start from current cursor row
                 // Otherwise start from beginning of current song position
                 const startRow = state.patternLoop ? this.tracker.currentRow : 0;
-                this.tracker.audio.play(this.tracker.song, this.tracker.currentSeqPos, startRow);
+                this.tracker.audio.play(this.tracker.currentSeqPos, startRow);
             }
             e.preventDefault();
             return;

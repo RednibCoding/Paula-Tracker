@@ -1,6 +1,7 @@
 /**
  * Core data structures for Paula Tracker
  * Note, Pattern, Instrument, and Song models
+ * Pure JavaScript - no platform dependencies
  */
 
 // Note class - represents a single note event in a pattern

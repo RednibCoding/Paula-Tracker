@@ -1,6 +1,6 @@
 /**
- * Clipboard module for pattern editing operations
- * Handles copy/paste/cut of rows and pattern data
+ * Clipboard operations for pattern editing
+ * Platform-independent - pure logic, no browser APIs
  */
 
 import { Note } from './data.js';
@@ -13,8 +13,6 @@ export class Clipboard {
     
     /**
      * Copy a single row (all channels)
-     * @param {Pattern} pattern - Pattern to copy from
-     * @param {number} row - Row number
      */
     copyRow(pattern, row) {
         this.buffer = [];
@@ -32,7 +30,6 @@ export class Clipboard {
     
     /**
      * Copy entire pattern
-     * @param {Pattern} pattern - Pattern to copy
      */
     copyPattern(pattern) {
         this.buffer = [];
@@ -54,9 +51,6 @@ export class Clipboard {
     
     /**
      * Copy a single channel column
-     * @param {Pattern} pattern - Pattern to copy from
-     * @param {number} row - Row number
-     * @param {number} channel - Channel number
      */
     copyChannel(pattern, row, channel) {
         const note = pattern.getNote(row, channel);
@@ -71,15 +65,11 @@ export class Clipboard {
     
     /**
      * Paste data at current position
-     * @param {Pattern} pattern - Pattern to paste into
-     * @param {number} row - Starting row
-     * @param {number} channel - Starting channel (for single channel paste)
      */
     paste(pattern, row, channel = 0) {
         if (!this.buffer) return;
         
         if (this.type === 'row') {
-            // Paste single row
             for (let ch = 0; ch < 4; ch++) {
                 const note = pattern.getNote(row, ch);
                 const data = this.buffer[ch];
@@ -89,7 +79,6 @@ export class Clipboard {
                 note.param = data.param;
             }
         } else if (this.type === 'pattern') {
-            // Paste entire pattern
             for (let r = 0; r < 64; r++) {
                 for (let ch = 0; ch < 4; ch++) {
                     const note = pattern.getNote(r, ch);
@@ -101,7 +90,6 @@ export class Clipboard {
                 }
             }
         } else if (this.type === 'channel') {
-            // Paste single channel
             const note = pattern.getNote(row, channel);
             note.period = this.buffer.period;
             note.instrument = this.buffer.instrument;
@@ -112,7 +100,6 @@ export class Clipboard {
     
     /**
      * Clear entire pattern
-     * @param {Pattern} pattern - Pattern to clear
      */
     clearPattern(pattern) {
         for (let row = 0; row < 64; row++) {
@@ -124,8 +111,6 @@ export class Clipboard {
     
     /**
      * Clear a single row
-     * @param {Pattern} pattern - Pattern containing the row
-     * @param {number} row - Row number to clear
      */
     clearRow(pattern, row) {
         for (let ch = 0; ch < 4; ch++) {
@@ -135,11 +120,8 @@ export class Clipboard {
     
     /**
      * Insert a blank row, shifting rows down
-     * @param {Pattern} pattern - Pattern to modify
-     * @param {number} row - Row to insert at
      */
     insertRow(pattern, row) {
-        // Move rows down from bottom to insertion point
         for (let r = 63; r > row; r--) {
             for (let ch = 0; ch < 4; ch++) {
                 const src = pattern.getNote(r - 1, ch);
@@ -150,17 +132,13 @@ export class Clipboard {
                 dst.param = src.param;
             }
         }
-        // Clear the inserted row
         this.clearRow(pattern, row);
     }
     
     /**
      * Delete a row, shifting rows up
-     * @param {Pattern} pattern - Pattern to modify
-     * @param {number} row - Row to delete
      */
     deleteRow(pattern, row) {
-        // Move rows up from deletion point to end
         for (let r = row; r < 63; r++) {
             for (let ch = 0; ch < 4; ch++) {
                 const src = pattern.getNote(r + 1, ch);
@@ -171,13 +149,11 @@ export class Clipboard {
                 dst.param = src.param;
             }
         }
-        // Clear the last row
         this.clearRow(pattern, 63);
     }
     
     /**
      * Check if clipboard has data
-     * @returns {boolean}
      */
     hasData() {
         return this.buffer !== null;
@@ -185,7 +161,6 @@ export class Clipboard {
     
     /**
      * Get clipboard type
-     * @returns {string|null}
      */
     getType() {
         return this.type;

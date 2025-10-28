@@ -215,6 +215,10 @@ export class UI {
      * Draw hex number with padding
      */
     hex(value, x, y, digits = 2, color = 'text') {
+        // Handle undefined/null values
+        if (value === undefined || value === null) {
+            value = 0;
+        }
         const str = value.toString(16).toUpperCase().padStart(digits, '0');
         this.text(str, x, y, color);
     }

@@ -1,15 +1,22 @@
 /**
  * Paula Tracker - Main Application
  * Old-school 4-channel tracker for Amiga Paula chip
+ * Now using modular PaulaLib architecture
  */
 
+// PaulaLib - platform-independent core
+import { Song, Note } from '../../../paulalib/data.js';
+import { Clipboard } from '../../../paulalib/clipboard.js';
+import { PERIOD_TABLE, NOTE_NAMES } from '../../../paulalib/audio-engine.js';
+
+// Platform adapters - browser-specific
+import { WebAudioAdapter } from './platform/audio-web.js';
+import { loadFromFile, saveToFile } from './platform/file-browser.js';
+import { BrowserSampleLoader } from './platform/sample-loader-browser.js';
+
+// UI components
 import { UI } from './ui.js';
-import { Song, Note } from './data.js';
-import { AudioEngine, PERIOD_TABLE, NOTE_NAMES } from './audio.js';
-import { ModLoader } from './modloader.js';
 import { NoteEntry } from './noteentry.js';
-import { Clipboard } from './clipboard.js';
-import { SampleLoader } from './sampleloader.js';
 import { Renderer } from './renderer.js';
 import { InputHandler } from './inputhandler.js';
 import { InstrumentManager } from './instrumentmanager.js';
@@ -18,10 +25,15 @@ class PaulaTracker {
     constructor(canvas) {
         this.ui = new UI(canvas);
         this.song = new Song();
-        this.audio = new AudioEngine();
+        
+        // Use WebAudioAdapter instead of old AudioEngine
+        this.audio = new WebAudioAdapter();
+        this.audio.init();
+        this.audio.setSong(this.song);  // Set the initial song!
+        
         this.noteEntry = new NoteEntry(this.audio);
         this.clipboard = new Clipboard();
-        this.sampleLoader = new SampleLoader();
+        this.sampleLoader = new BrowserSampleLoader();
         this.keyboard = { getHexDigit: (key) => {
             const hex = '0123456789ABCDEF';
             const upper = key.toUpperCase();
@@ -103,8 +115,11 @@ class PaulaTracker {
             const file = e.target.files[0];
             if (file) {
                 try {
-                    this.song = await ModLoader.loadFromFile(file);
-                    this.currentPattern = 0;
+                    // Use platform adapter for file loading
+                    this.song = await loadFromFile(file);
+                    this.audio.setSong(this.song);
+                    // Set current pattern to the first pattern in the pattern order
+                    this.currentPattern = this.song.patternOrder[0] || 0;
                     this.currentRow = 0;
                     this.scrollOffset = 0;
                     this.audio.stop();
@@ -130,7 +145,8 @@ class PaulaTracker {
      */
     async saveModFile() {
         const filename = (this.song.title || 'untitled').trim().replace(/[^a-zA-Z0-9_-]/g, '_') + '.mod';
-        await ModLoader.saveToFile(this.song, filename);
+        // Use platform adapter for file saving
+        await saveToFile(this.song, filename);
     }
     
     /**

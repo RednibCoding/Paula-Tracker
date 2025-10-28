@@ -4,12 +4,13 @@
  */
 
 import { KeyboardMap } from './keyboard.js';
+import { PERIOD_TABLE } from '../../../paulalib/audio-engine.js';
 
 export class NoteEntry {
     constructor(audio) {
         this.audio = audio;
         this.keyboard = new KeyboardMap();
-        this.currentOctave = 2; // Default octave (1-3 typical for tracker)
+        this.currentOctave = 2; // Default octave (1-3 range)
         this.currentInstrument = 1;
     }
     
@@ -20,20 +21,9 @@ export class NoteEntry {
      * @returns {number} Amiga period value
      */
     noteToPeriod(note, octave) {
-        // Period table for octaves 1-3 (C-1 to B-3)
-        // Based on Amiga Paula frequency
-        const periodTable = [
-            // Octave 1
-            856, 808, 762, 720, 678, 640, 604, 570, 538, 508, 480, 453,
-            // Octave 2
-            428, 404, 381, 360, 339, 320, 302, 285, 269, 254, 240, 226,
-            // Octave 3
-            214, 202, 190, 180, 170, 160, 151, 143, 135, 127, 120, 113
-        ];
-        
         const index = (octave - 1) * 12 + note;
-        if (index >= 0 && index < periodTable.length) {
-            return periodTable[index];
+        if (index >= 0 && index < PERIOD_TABLE.length) {
+            return PERIOD_TABLE[index];
         }
         return 0;
     }

@@ -25,7 +25,7 @@ export class Renderer {
         const y = 35;
         
         if (this.ui.button(10, y, 60, 20, 'PLAY')) {
-            this.tracker.audio.play(this.tracker.song, 0);
+            this.tracker.audio.play(0);
         }
         if (this.ui.button(75, y, 60, 20, 'STOP')) {
             this.tracker.audio.stop();
@@ -39,15 +39,15 @@ export class Renderer {
         this.ui.hex(this.tracker.currentPattern, 300, y + 3, 2, 'yellow');
         
         this.ui.text(`POS: `, 340, y + 3, 'text');
-        this.ui.hex(this.tracker.audio.getState().position, 385, y + 3, 2, 'yellow');
+        const playState = this.tracker.audio.getState();
+        this.ui.hex((playState && playState.position) || 0, 385, y + 3, 2, 'yellow');
         
         // Display live tempo/BPM from audio engine (updates with Fxx effects)
-        const playState = this.tracker.audio.getState();
         this.ui.text(`TEMPO: `, 425, y + 3, 'text');
-        this.ui.hex(playState.tempo, 495, y + 3, 2, 'yellow');
+        this.ui.hex((playState && playState.tempo) || 6, 495, y + 3, 2, 'yellow');
         
         this.ui.text(`BPM: `, 535, y + 3, 'text');
-        this.ui.hex(playState.bpm, 580, y + 3, 3, 'yellow');
+        this.ui.hex((playState && playState.bpm) || 125, 580, y + 3, 3, 'yellow');
     }
     
     /**
@@ -84,6 +84,10 @@ export class Renderer {
         
         // Pattern data
         const pattern = this.tracker.song.patterns[this.tracker.currentPattern];
+        if (!pattern) {
+            this.ui.text('ERROR: No pattern at index ' + this.tracker.currentPattern, x + 10, y + 50, 'textDim');
+            return;
+        }
         const startRow = this.tracker.scrollOffset;
         const endRow = Math.min(64, startRow + this.tracker.visibleRows);
         const rowHeight = 14;
@@ -135,12 +139,14 @@ export class Renderer {
                 if (isMuted && instColor !== 'textBright') instColor = 'textDim';
                 this.ui.text(instText, cx + 28, ry, instColor);
                 
-                // Effect - show hex if value > 0 OR if cursor is on this field
-                const showEff = note.effect > 0 || (isCursor && this.tracker.currentColumn === 2);
+                // Effect - show hex if (value > 0 OR param > 0) OR if cursor is on this field
+                // Effect 0 with param != 0 is valid (arpeggio)
+                const hasEffect = note.effect > 0 || note.param > 0;
+                const showEff = hasEffect || (isCursor && this.tracker.currentColumn === 2);
                 const effText = showEff ? 
                     note.effect.toString(16).toUpperCase() : '.';
                 let effColor = isCursor && this.tracker.currentColumn === 2 ? 'textBright' : 
-                    (note.effect > 0 ? 'yellow' : 'textDim');
+                    (hasEffect ? 'yellow' : 'textDim');
                 if (isMuted && effColor !== 'textBright') effColor = 'textDim';
                 this.ui.text(effText, cx + 50, ry, effColor);
                 
@@ -243,6 +249,10 @@ export class Renderer {
             
             const iy = y + 25 + i * 14;
             const instr = this.tracker.song.instruments[instrNum];
+            
+            // Safety check for instrument
+            if (!instr) continue;
+            
             const selected = (instrNum === this.tracker.noteEntry.getInstrument());
             
             if (selected) {
