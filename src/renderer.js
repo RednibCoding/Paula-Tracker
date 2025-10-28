@@ -124,24 +124,27 @@ export class Renderer {
                 if (isMuted && noteColor !== 'textBright') noteColor = 'textDim';
                 this.ui.text(noteName, cx, ry, noteColor);
                 
-                // Instrument - dim if channel is muted
-                const instText = note.instrument > 0 ? 
+                // Instrument - show hex if value > 0 OR if cursor is on this field
+                const showInst = note.instrument > 0 || (isCursor && this.tracker.currentColumn === 1);
+                const instText = showInst ? 
                     note.instrument.toString(16).toUpperCase().padStart(2, '0') : '..';
                 let instColor = isCursor && this.tracker.currentColumn === 1 ? 'textBright' : 
                     (note.instrument > 0 ? 'green' : 'textDim');
                 if (isMuted && instColor !== 'textBright') instColor = 'textDim';
                 this.ui.text(instText, cx + 28, ry, instColor);
                 
-                // Effect - dim if channel is muted
-                const effText = note.effect > 0 ? 
+                // Effect - show hex if value > 0 OR if cursor is on this field
+                const showEff = note.effect > 0 || (isCursor && this.tracker.currentColumn === 2);
+                const effText = showEff ? 
                     note.effect.toString(16).toUpperCase() : '.';
                 let effColor = isCursor && this.tracker.currentColumn === 2 ? 'textBright' : 
                     (note.effect > 0 ? 'yellow' : 'textDim');
                 if (isMuted && effColor !== 'textBright') effColor = 'textDim';
                 this.ui.text(effText, cx + 50, ry, effColor);
                 
-                // Parameter - dim if channel is muted
-                const paramText = note.param > 0 ? 
+                // Parameter - show hex if value > 0 OR if cursor is on this field
+                const showParam = note.param > 0 || (isCursor && this.tracker.currentColumn === 3);
+                const paramText = showParam ? 
                     note.param.toString(16).toUpperCase().padStart(2, '0') : '..';
                 let paramColor = isCursor && this.tracker.currentColumn === 3 ? 'textBright' : 
                     (note.param > 0 ? 'yellow' : 'textDim');

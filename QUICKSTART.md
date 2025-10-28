@@ -38,26 +38,86 @@ Example: Press **Q** to enter a C-2 note
 
 ### Step 2: Understanding the Pattern Display
 
-Each row shows 4 columns:
+Each row shows 4 columns per channel:
 ```
 NOTE  INST  EFF  PAR
-C-2   01    .    ..
+C-2   01    C    40
 ```
 
 - **NOTE**: The musical note (C-1, D#2, etc.) or `---` for empty
-- **INST**: Instrument number (01-1F in hex)
-- **EFF**: Effect command (0-F)
-- **PAR**: Effect parameter (00-FF in hex)
+- **INST**: Instrument number (00-1F hex = 0-31 decimal)
+- **EFF**: Effect command (0-F hex)
+- **PAR**: Effect parameter (00-FF hex)
 
-### Step 3: Add Some Effects
+All numeric values are displayed in **hexadecimal** (base 16).
 
-1. Navigate to the effect column (press → twice after note)
-2. Press a hex key (0-F) to set an effect:
-   - Press **C** for volume (effect C)
-   - Press → to move to parameter
-   - Press **4** then **0** for volume 64 (0x40)
+### Step 3: Entering Data in the Pattern
 
-### Step 4: Play Your Music
+The pattern editor has **4 columns** per channel. Use arrow keys to navigate between them:
+
+#### **Column 1: Note**
+- Press piano keys to enter notes:
+  - Lower row (`Z`-`M`) = C-1 octave
+  - Upper row (`Q`-`P`) = C-2 octave
+  - Black keys (`S`,`D`,`G`,`H`,`J`) = sharps
+- Automatically enters current instrument number
+- Cursor advances to next row
+
+#### **Column 2: Instrument (Two Hex Digits)**
+1. Navigate to instrument column (press → once after note)
+2. Type **first hex digit** (0-9, A-F) - this is the high nibble
+3. Type **second hex digit** - this is the low nibble, cursor advances
+4. Examples:
+   - Type `01` = instrument 1
+   - Type `0F` = instrument 15
+   - Type `1A` = instrument 26 (hex 1A = decimal 26)
+   - Valid range: `00`-`1F` (0-31)
+
+#### **Column 3: Effect (One Hex Digit)**
+1. Navigate to effect column (press → twice after note)
+2. Type **one hex digit** (0-F) for the effect type
+3. Cursor automatically moves to parameter column
+4. Examples:
+   - Type `C` = volume effect
+   - Type `3` = portamento (pitch slide)
+   - Type `A` = volume slide
+
+#### **Column 4: Effect Parameter (Two Hex Digits)**
+1. After entering effect, you're automatically in parameter column
+2. Type **first hex digit** - high nibble
+3. Type **second hex digit** - low nibble, cursor advances to next row
+4. Examples:
+   - Type `40` = parameter value 64 (hex 40 = decimal 64)
+   - Type `10` = parameter value 16
+   - Type `FF` = parameter value 255
+
+**Complete Example:**
+```
+1. Press Q → enters "C-2" with current instrument
+2. Press → to move to instrument column
+3. Type 0 then 1 → sets instrument to 01
+4. Press → to move to effect column  
+5. Type C → sets effect to C (volume)
+6. (cursor auto-moves to parameter)
+7. Type 4 then 0 → sets parameter to 40 (volume 64)
+8. Cursor advances to next row automatically
+```
+
+Result:
+```
+NOTE  INST  EFF  PAR
+C-2   01    C    40    ← You just entered this!
+```
+
+### Step 4: Quick Entry Workflow
+
+For faster entry, you can skip around:
+- **Press Tab** to jump to next column
+- **Arrow keys** to navigate anywhere
+- When cursor is on a field with value 0, it shows the zero (00, 0, or ..)
+- When cursor leaves, zeros are hidden (shown as `.` or `..`)
+
+### Step 5: Play Your Music
 
 - Press **SPACE** to start playback
 - Press **SPACE** again to stop

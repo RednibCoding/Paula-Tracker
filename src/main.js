@@ -44,6 +44,7 @@ class PaulaTracker {
         this.sequencerScrollOffset = 0; // Scroll offset for song sequencer
         this.instrumentScrollOffset = 0; // Scroll offset for instrument list
         this.showHelp = false; // F1 help screen
+        this.hexEntryState = 0; // 0=first digit, 1=second digit for multi-digit entry
         
         // UI layout - ProTracker style with right panel
         this.patternViewY = 60;

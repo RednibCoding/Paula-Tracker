@@ -192,6 +192,9 @@ export class InputHandler {
         
         // Delete key: Clear current cell
         else if (e.key === 'Delete' && !e.shiftKey && !e.ctrlKey) {
+            // Reset hex entry state
+            this.tracker.hexEntryState = 0;
+            
             const pattern = this.tracker.song.patterns[this.tracker.currentPattern];
             const note = pattern.getNote(this.tracker.currentRow, this.tracker.currentChannel);
             
@@ -224,6 +227,9 @@ export class InputHandler {
         
         // Navigation
         else if (e.key === 'ArrowUp') {
+            // Reset hex entry state when navigating
+            this.tracker.hexEntryState = 0;
+            
             if (e.shiftKey) {
                 // Shift+Up: Previous instrument
                 const currentInst = this.tracker.noteEntry.getInstrument();
@@ -254,6 +260,9 @@ export class InputHandler {
             e.preventDefault();
             return;
         } else if (e.key === 'ArrowDown') {
+            // Reset hex entry state when navigating
+            this.tracker.hexEntryState = 0;
+            
             const pattern = this.tracker.song.patterns[this.tracker.currentPattern];
             if (e.shiftKey) {
                 // Shift+Down: Next instrument
@@ -285,6 +294,9 @@ export class InputHandler {
             e.preventDefault();
             return;
         } else if (e.key === 'ArrowLeft') {
+            // Reset hex entry state when navigating
+            this.tracker.hexEntryState = 0;
+            
             if (e.altKey) {
                 // Alt+Left: Decrease pattern number at current sequencer position
                 const currentPattern = this.tracker.song.patternOrder[this.tracker.currentSeqPos];
@@ -308,6 +320,9 @@ export class InputHandler {
             e.preventDefault();
             return;
         } else if (e.key === 'ArrowRight') {
+            // Reset hex entry state when navigating
+            this.tracker.hexEntryState = 0;
+            
             if (e.altKey) {
                 // Alt+Right: Increase pattern number at current sequencer position
                 const currentPattern = this.tracker.song.patternOrder[this.tracker.currentSeqPos];
@@ -331,6 +346,8 @@ export class InputHandler {
             e.preventDefault();
             return;
         } else if (e.key === 'Tab') {
+            // Reset hex entry state when changing columns
+            this.tracker.hexEntryState = 0;
             this.tracker.currentColumn = (this.tracker.currentColumn + 1) % 4;
             e.preventDefault();
             return;
@@ -373,6 +390,9 @@ export class InputHandler {
         // Note entry
         const noteResult = this.tracker.noteEntry.createNoteFromKey(e.key);
         if (noteResult) {
+            // Reset hex entry state when entering a note
+            this.tracker.hexEntryState = 0;
+            
             const pattern = this.tracker.song.patterns[this.tracker.currentPattern];
             const note = pattern.getNote(this.tracker.currentRow, this.tracker.currentChannel);
             note.period = noteResult.period;
@@ -387,7 +407,7 @@ export class InputHandler {
             return;
         }
         
-        // Hex digit entry for instrument/effect
+        // Hex digit entry for instrument/effect/parameter
         if (this.tracker.currentColumn > 0) {
             const hexDigit = this.tracker.keyboard.getHexDigit(e.key);
             if (hexDigit !== null) {
@@ -395,21 +415,47 @@ export class InputHandler {
                 const note = pattern.getNote(this.tracker.currentRow, this.tracker.currentChannel);
                 
                 if (this.tracker.currentColumn === 1) {
-                    // Instrument entry - enterInstrumentDigit(currentValue, key, isLowDigit)
-                    note.instrument = this.tracker.noteEntry.enterInstrumentDigit(note.instrument, e.key, false);
+                    // Instrument entry - two hex digits (00-1F = 0-31 decimal)
+                    if (this.tracker.hexEntryState === 0) {
+                        // First digit: high nibble
+                        note.instrument = (hexDigit << 4) & 0xF0;
+                        this.tracker.hexEntryState = 1;
+                    } else {
+                        // Second digit: low nibble
+                        note.instrument = (note.instrument & 0xF0) | hexDigit;
+                        // Clamp to valid range (0-31 = 0x00-0x1F)
+                        if (note.instrument > 31) note.instrument = 31;
+                        this.tracker.hexEntryState = 0;
+                        // Advance row
+                        if (this.tracker.currentRow < pattern.length - 1) {
+                            this.tracker.currentRow++;
+                            this.tracker.updateScroll();
+                        }
+                    }
                 } else if (this.tracker.currentColumn === 2) {
-                    // Effect type
+                    // Effect type - single hex digit (0-F)
                     note.effect = hexDigit;
+                    this.tracker.hexEntryState = 0;
+                    // Auto-advance to parameter column
+                    this.tracker.currentColumn = 3;
                 } else if (this.tracker.currentColumn === 3) {
-                    // Effect parameter
-                    note.param = this.tracker.noteEntry.enterHexDigit(note.param, e.key, false);
+                    // Effect parameter - two hex digits (00-FF)
+                    if (this.tracker.hexEntryState === 0) {
+                        // First digit: high nibble
+                        note.param = (hexDigit << 4) & 0xF0;
+                        this.tracker.hexEntryState = 1;
+                    } else {
+                        // Second digit: low nibble
+                        note.param = (note.param & 0xF0) | hexDigit;
+                        this.tracker.hexEntryState = 0;
+                        // Advance row
+                        if (this.tracker.currentRow < pattern.length - 1) {
+                            this.tracker.currentRow++;
+                            this.tracker.updateScroll();
+                        }
+                    }
                 }
                 
-                // Advance row
-                if (this.tracker.currentRow < pattern.length - 1) {
-                    this.tracker.currentRow++;
-                    this.tracker.updateScroll();
-                }
                 e.preventDefault();
                 return;
             }
