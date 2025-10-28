@@ -6,7 +6,7 @@ A classic 4-channel sound tracker inspired by the legendary **Ultimate Sound Tra
 
 ### Demo Video
 
-[![Paula Tracker Demo](https://img.youtube.com/vi/FpLkmfKNvbI/maxresdefault.jpg)](https://youtu.be/FpLkmfKNvbI)
+https://youtu.be/FpLkmfKNvbI
 
 *Click to watch the demo on YouTube*
 
