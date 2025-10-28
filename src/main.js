@@ -156,19 +156,6 @@ class PaulaTracker {
     }
     
     /**
-     * Edit song title
-     */
-    editSongTitle() {
-        const currentTitle = this.song.title || 'Paula Tracker v1.0';
-        const newTitle = prompt('Enter song title (max 20 chars):', currentTitle);
-        
-        if (newTitle !== null) {
-            // Limit to 20 characters (MOD format limitation)
-            this.song.title = newTitle.substring(0, 20);
-        }
-    }
-    
-    /**
      * Generate a simple test instrument
      */
     generateTestSineInstrument() {

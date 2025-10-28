@@ -389,8 +389,6 @@ export class Renderer {
         y += 13;
         this.ui.text('Ctrl+S       Save MOD file', col2, y, 'text');
         y += 13;
-        this.ui.text('Ctrl+E       Edit song title', col2, y, 'text');
-        y += 13;
         this.ui.text('Shift+Insert Load WAV sample', col2, y, 'text');
         y += 13;
         this.ui.text('Shift+Home   Save WAV sample', col2, y, 'text');

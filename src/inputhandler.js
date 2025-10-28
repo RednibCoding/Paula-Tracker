@@ -122,14 +122,6 @@ export class InputHandler {
             return;
         }
         
-        // Edit song title
-        else if (e.ctrlKey && e.key === 'e') {
-            // Ctrl+E: Edit song title
-            this.tracker.editSongTitle();
-            e.preventDefault();
-            return;
-        }
-        
         // Pattern editing operations
         else if (e.key === 'Insert' && e.shiftKey && !e.altKey) {
             // Shift+Insert: Load WAV sample for selected instrument

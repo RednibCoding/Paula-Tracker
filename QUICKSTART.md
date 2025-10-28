@@ -139,7 +139,8 @@ For faster entry, you can skip around:
 
 ### Save Your Work
 - Press **Ctrl+S** to save as a .MOD file
-- Press **Ctrl+E** to edit the song title (20 char max)
+- A save dialog will appear where you can choose location and filename
+- The song's internal title automatically updates from the filename
 
 ## Pattern Management
 
@@ -319,7 +320,6 @@ Row | Ch1 (Bass)  | Ch2 (Lead)
 ├──────────────────────────────────────┤
 │ Ctrl+L        Load MOD file          │
 │ Ctrl+S        Save MOD file          │
-│ Ctrl+E        Edit song title        │
 │ Ctrl+D        Duplicate pattern      │
 │ Shift+Insert  Load sample            │
 │ Shift+Home    Save sample            │

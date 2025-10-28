@@ -76,8 +76,7 @@ python3 -m http.server 8080
 
 #### Files & Management
 - **Ctrl+L** - Load MOD file
-- **Ctrl+S** - Save MOD file
-- **Ctrl+E** - Edit song title
+- **Ctrl+S** - Save MOD file (song title updates from filename)
 - **Ctrl+D** - Duplicate current pattern to next slot
 - **Shift+Insert** - Load WAV/MP3/OGG sample into current instrument
 - **Shift+Home** - Save current instrument as WAV file
