@@ -331,9 +331,55 @@ export class ModLoader {
     /**
      * Download a MOD file
      */
-    static saveToFile(song, filename = 'song.mod') {
+    static async saveToFile(song, filename = 'song.mod') {
         const data = this.save(song);
-        const blob = new Blob([data], { type: 'application/octet-stream' });
+        
+        // Use File System Access API if available (Chrome, Edge, etc.)
+        if ('showSaveFilePicker' in window) {
+            try {
+                const options = {
+                    suggestedName: filename,
+                    types: [{
+                        description: 'ProTracker MOD File',
+                        accept: { 'application/octet-stream': ['.mod'] }
+                    }]
+                };
+                
+                const handle = await window.showSaveFilePicker(options);
+                
+                // Update song title based on chosen filename (without .mod extension)
+                const savedFilename = handle.name;
+                const titleWithoutExt = savedFilename.replace(/\.mod$/i, '');
+                song.title = titleWithoutExt.substring(0, 20); // MOD format: 20 chars max
+                
+                // Re-save with updated title
+                const updatedData = this.save(song);
+                
+                const writable = await handle.createWritable();
+                await writable.write(updatedData);
+                await writable.close();
+                
+                console.log('File saved successfully as:', savedFilename);
+                console.log('Song title updated to:', song.title);
+                return;
+            } catch (err) {
+                // User cancelled or error occurred
+                if (err.name !== 'AbortError') {
+                    console.error('Save failed:', err);
+                }
+                return;
+            }
+        }
+        
+        // Fallback: automatic download (older browsers)
+        // Update song title from filename
+        const titleWithoutExt = filename.replace(/\.mod$/i, '');
+        song.title = titleWithoutExt.substring(0, 20);
+        
+        // Re-save with updated title
+        const updatedData = this.save(song);
+        
+        const blob = new Blob([updatedData], { type: 'application/octet-stream' });
         const url = URL.createObjectURL(blob);
         
         const a = document.createElement('a');

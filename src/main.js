@@ -128,9 +128,9 @@ class PaulaTracker {
     /**
      * Save MOD file
      */
-    saveModFile() {
+    async saveModFile() {
         const filename = (this.song.title || 'untitled').trim().replace(/[^a-zA-Z0-9_-]/g, '_') + '.mod';
-        ModLoader.saveToFile(this.song, filename);
+        await ModLoader.saveToFile(this.song, filename);
     }
     
     /**
