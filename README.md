@@ -1,6 +1,10 @@
 # Paula Tracker
 
-A classic 4-channel sound tracker inspired by the legendary **Ultimate Sound Tracker** from the Amiga era. Built with modern web technologies (ES6 JavaScript, Canvas, Web Audio API) while maintaining that old-school demoscene aesthetic.
+A classic 4-channel sound tracker inspired by the legendary **Ultimate Sound Tracker** from the Amiga era. Built with modern web technologies while maintaining that old-school demoscene aesthetic.
+
+** Features a complete software-based Amiga Paula chip emulator! **
+
+Paula Tracker includes **PaulaLib** - a platform-independent audio engine that accurately emulates the Amiga Paula chip in pure software. All audio mixing, resampling, and effects are calculated in JavaScript - the Web Audio API is only used to send the final mixed samples to your speakers!
 
 ![PaulaTracker](/readme/PaulaTracker.png)
 
@@ -98,6 +102,40 @@ ROW | NOTE INS EFF PAR | NOTE INS EFF PAR | NOTE INS EFF PAR | NOTE INS EFF PAR 
 
 ## Technical Details
 
+### PaulaLib - Software Paula Chip Emulator
+
+**PaulaLib is a complete, platform-independent Amiga Paula chip emulator written in pure JavaScript!**
+
+Unlike typical web audio applications that rely on the Web Audio API for mixing and effects, PaulaLib performs ALL audio processing in software:
+
+#### What PaulaLib Does:
+- ✅ **Software mixing** - Mixes 4 audio channels entirely in JavaScript
+- ✅ **Period-based synthesis** - Authentic Amiga period-to-frequency conversion (PAULA_FREQUENCY / period)
+- ✅ **Linear interpolation** - Smooth resampling for any output sample rate
+- ✅ **All ProTracker effects** - Arpeggio, vibrato, slides, tremolo, volume slides, etc.
+- ✅ **Finetune support** - 16 finetune values per note (ProTracker standard)
+- ✅ **Pattern sequencing** - Complete MOD playback with pattern order
+- ✅ **VU meters** - Peak detection with smooth decay
+- ✅ **ProTracker-accurate timing** - Tick/tempo system matching original hardware
+
+#### What Web Audio API Does:
+- ❌ **NOT mixing** - PaulaLib mixes in software
+- ❌ **NOT effects** - PaulaLib calculates all effects
+- ❌ **NOT resampling** - PaulaLib does linear interpolation
+- ✅ **ONLY output** - Just plays the final mixed stereo buffer
+
+**This means PaulaLib can run on ANY platform that can play PCM audio:**
+- Web browsers (current implementation)
+- Desktop apps (SDL, PortAudio, ALSA)
+- Embedded devices
+- Game consoles
+- Mobile devices (iOS/Android native audio)
+- Raspberry Pi
+- Arduino with audio output
+- Literally anywhere!
+
+The platform-specific code is minimal - just a thin adapter that requests audio buffers and sends them to the speakers. Everything else is pure, portable JavaScript.
+
 ### Architecture
 
 The tracker is built with clean, modular ES6 code:
@@ -105,31 +143,50 @@ The tracker is built with clean, modular ES6 code:
 ```
 PaulaTracker/
 ├── index.html          # Main HTML page
-├── src/
+├── paulalib/           # 🎵 PLATFORM-INDEPENDENT PAULA EMULATOR
+│   ├── audio-engine.js # Complete Paula chip emulation (mixing, effects, timing)
+│   ├── data.js         # Data structures (Note, Pattern, Song, Instrument)
+│   ├── modloader.js    # MOD file format parsing and writing
+│   ├── sampleutils.js  # Sample loading utilities (WAV decoding, etc.)
+│   └── clipboard.js    # Copy/paste functionality
+├── src/                # 🌐 WEB PLATFORM SPECIFIC
 │   ├── main.js         # Main tracker application and state management
 │   ├── ui.js           # Immediate mode UI framework with canvas rendering
-│   ├── data.js         # Data structures (Note, Pattern, Song, Instrument)
-│   ├── audio.js        # Web Audio playback engine with Paula emulation
 │   ├── renderer.js     # All UI rendering (pattern editor, sequencer, VU meters)
 │   ├── inputhandler.js # Keyboard input handling and shortcuts
-│   ├── modloader.js    # MOD file loading and saving
-│   ├── sampleloader.js # WAV/MP3/OGG sample import/export
-│   ├── clipboard.js    # Copy/paste functionality
 │   ├── noteentry.js    # Note entry and instrument selection
 │   ├── keyboard.js     # Piano keyboard mapping
-│   └── instrumentmanager.js # Instrument preview and management
+│   ├── instrumentmanager.js # Instrument preview and management
+│   └── platform/       # Platform adapters (web-specific)
+│       ├── audio-web.js        # Web Audio API adapter (just output!)
+│       ├── file-browser.js     # Browser file I/O
+│       └── sample-loader-browser.js # Browser audio decoding
 ```
 
-### Audio Engine
+**The key innovation:** The `paulalib/` directory contains zero platform-specific code! It's pure JavaScript that could run in Node.js, Deno, Bun, or be compiled to C/Rust/anything else. The `src/platform/` adapters are the only web-specific parts.
 
-- Uses Amiga period tables for authentic sound reproduction
-- Web Audio API for sample playback with loop support
-- Support for sample loops, finetune, and volume
-- Full ProTracker effect implementation
-- 4-channel stereo separation (channels 0,3 left / 1,2 right)
-- Real-time VU meters with volume tracking
-- Channel muting system for composition workflow
-- Pattern loop mode for focused editing
+### Paula Chip Emulation Details
+
+PaulaLib accurately emulates the Amiga Paula audio chip:
+
+- **4-channel sample playback** - Each channel independently plays 8-bit samples
+- **Period-based pitch control** - Uses Amiga period tables (not Hz frequencies!)
+- **Sample rate conversion** - Linear interpolation for smooth playback at any rate
+- **Hardware-accurate timing** - Tick/tempo system matching ProTracker
+- **Authentic vibrato** - Uses ProTracker's 32-value sine lookup table
+- **Finetune support** - 16 period variations per note (-8 to +7)
+- **Channel mixing** - Software stereo mixing (L/R/L/R panning)
+- **Loop support** - Sample loops with configurable start/length
+- **Volume control** - Per-channel 0-64 volume range
+- **VU metering** - Peak tracking with smooth decay
+
+**Paula Constants:**
+```javascript
+PAULA_FREQUENCY = 7093789.2 / 2 = 3546894.6 Hz (PAL)
+Sample Rate = PAULA_FREQUENCY / (period * outputSampleRate)
+```
+
+The period-to-rate conversion is authentic to the original hardware!
 
 ### Period Table (Amiga Standard)
 
