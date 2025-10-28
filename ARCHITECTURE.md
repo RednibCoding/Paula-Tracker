@@ -12,29 +12,26 @@ Paula-Tracker/
 │   ├── audio-engine.js    ← Paula chip emulation (Float32Array only)
 │   ├── clipboard.js       ← Pattern editing operations
 │   ├── sampleutils.js     ← WAV encode/decode, resampling
-│   ├── index.js           ← Main entry point (re-exports all modules)
 │   └── README.md          ← Library API documentation
 │
-├── tracker/               ← Tracker implementations
-│   └── web/               ← Web-based tracker
-│       ├── src/           ← Application code
-│       │   ├── platform/  ← Browser-specific adapters
-│       │   │   ├── audio-web.js           ← Web Audio API wrapper
-│       │   │   ├── file-browser.js        ← File loading/saving
-│       │   │   └── sample-loader-browser.js ← Sample import
-│       │   │
-│       │   ├── main.js            ← Main application entry
-│       │   ├── ui.js              ← UI layout and components
-│       │   ├── renderer.js        ← Canvas rendering
-│       │   ├── inputhandler.js    ← Keyboard/mouse handling
-│       │   ├── noteentry.js       ← Note input logic
-│       │   ├── keyboard.js        ← Keyboard mapping
-│       │   └── instrumentmanager.js ← Instrument UI
-│       │
-│       ├── public/        ← Web assets
-│       │   └── icon.png
-│       │
-│       └── index.html     ← Entry point for web tracker
+├── src/                   ← Web-based tracker (root level for GitHub Pages)
+│   ├── platform/          ← Browser-specific adapters
+│   │   ├── audio-web.js           ← Web Audio API wrapper
+│   │   ├── file-browser.js        ← File loading/saving
+│   │   └── sample-loader-browser.js ← Sample import
+│   │
+│   ├── main.js            ← Main application entry
+│   ├── ui.js              ← UI layout and components
+│   ├── renderer.js        ← Canvas rendering
+│   ├── inputhandler.js    ← Keyboard/mouse handling
+│   ├── noteentry.js       ← Note input logic
+│   ├── keyboard.js        ← Keyboard mapping
+│   └── instrumentmanager.js ← Instrument UI
+│
+├── public/                ← Web assets
+│   └── icon.png
+│
+├── index.html             ← Entry point for web tracker (root level for GitHub Pages)
 │
 ├── demomods/              ← Example MOD files
 ├── demosamples/           ← Example audio samples
@@ -65,7 +62,7 @@ They NEVER call:
 - Node.js APIs (fs, path, etc.)
 - DOM APIs (document, window, etc.)
 
-### Platform Adapters (tracker/web/src/platform/)
+### Platform Adapters (src/platform/)
 
 **Browser-specific** - wraps PaulaLib with Web APIs.
 
@@ -75,7 +72,7 @@ They NEVER call:
 | `file-browser.js` | File I/O | `modloader.js` + fetch/FileReader/Blob |
 | `sample-loader-browser.js` | Sample import | `sampleutils.js` + AudioContext |
 
-### UI Layer (tracker/web/src/)
+### UI Layer (src/)
 
 **Application-specific** - tracker interface built on top of platform layer.
 
@@ -92,12 +89,12 @@ They NEVER call:
 ┌─────────────────────────────────────────┐
 │           User Interface                │
 │  (Canvas, Keyboard, Mouse)              │
-│      tracker/web/src/*.js               │
+│            src/*.js                     │
 └───────────────┬─────────────────────────┘
                 │
 ┌───────────────▼─────────────────────────┐
 │      Platform Adapters Layer            │
-│   tracker/web/src/platform/             │
+│          src/platform/                  │
 │  • audio-web.js (Web Audio)             │
 │  • file-browser.js (Fetch/Blob)         │
 │  • sample-loader-browser.js             │
@@ -122,16 +119,16 @@ They NEVER call:
 The project has been reorganized with a clean, modular architecture:
 
 - ✅ PaulaLib core library (`paulalib/`) - Platform-independent (~30KB)
-- ✅ Web tracker moved to `tracker/web/` - Browser-based implementation
-- ✅ Platform adapters in `tracker/web/src/platform/` - Web API wrappers
-- ✅ Console and Odin implementations removed (future: separate repositories)
+- ✅ Web tracker at root level (`src/`, `index.html`) - For GitHub Pages compatibility
+- ✅ Platform adapters in `src/platform/` - Web API wrappers
 - ✅ All documentation updated to reflect new structure
 
 **Current Structure:**
 - **Core library:** `paulalib/` (platform-independent, reusable)
-- **Web tracker:** `tracker/web/` (browser-based implementation)
-  - **Platform layer:** `tracker/web/src/platform/` (Web API adapters)
-  - **UI layer:** `tracker/web/src/` (tracker application)
+- **Web tracker:** Root level (browser-based implementation)
+  - **Platform layer:** `src/platform/` (Web API adapters)
+  - **UI layer:** `src/` (tracker application)
+  - **Entry point:** `index.html` (GitHub Pages compatible)
 
 This structure allows:
 - 🎯 **Clean separation** - Core logic separate from platform code
@@ -145,7 +142,7 @@ This structure allows:
 
 ```javascript
 // Browser
-import { loadFromURL } from './tracker/web/src/platform/file-browser.js';
+import { loadFromURL } from './src/platform/file-browser.js';
 const song = await loadFromURL('song.mod');
 
 // Or use paulalib directly
@@ -159,7 +156,7 @@ const song = loadMOD(data);
 
 ```javascript
 // Browser
-import { WebAudioAdapter } from './tracker/web/src/platform/audio-web.js';
+import { WebAudioAdapter } from './src/platform/audio-web.js';
 const audio = new WebAudioAdapter();
 audio.init();
 audio.setSong(song);
