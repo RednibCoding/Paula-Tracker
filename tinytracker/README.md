@@ -129,7 +129,7 @@ Low:   Z X C V B N M (C3-B3)
 - **Delete**: Clear current cell
 - **Ctrl + 1-8**: Select instrument 1-8
 
-### Instrument Editing (Live)
+### Preset Editing (Live)
 - **Shift + A/D/S/R**: Adjust ADSR envelope
 - **Shift + W**: Adjust duty cycle (square wave)
 - **Ctrl + Shift + Key**: Fine adjustment

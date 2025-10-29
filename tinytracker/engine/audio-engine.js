@@ -27,8 +27,6 @@ for (let i = 0; i < 96; i++) {  // 8 octaves
  */
 export class TinyInstrument {
     constructor() {
-        this.name = 'New Instrument';
-        
         // Volume envelope (in seconds)
         this.attack = 0.01;      // Attack time
         this.decay = 0.1;        // Decay time
@@ -46,7 +44,6 @@ export class TinyInstrument {
     
     clone() {
         const inst = new TinyInstrument();
-        inst.name = this.name;
         inst.attack = this.attack;
         inst.decay = this.decay;
         inst.sustain = this.sustain;
@@ -113,22 +110,13 @@ export class TinySong {
         this.patterns = [new TinyPattern()];  // Max 64 patterns
         this.instruments = [];
         
-        // Create default instruments for each channel
+        // Create default instruments (presets)
         for (let i = 0; i < 16; i++) {
-            const inst = new TinyInstrument();
-            inst.name = `Instrument ${i + 1}`;
-            this.instruments.push(inst);
+            this.instruments.push(new TinyInstrument());
         }
         
         // Set some defaults
-        this.instruments[0].name = 'Square';
         this.instruments[0].dutyCycle = 0.5;
-        
-        this.instruments[1].name = 'Saw';
-        
-        this.instruments[2].name = 'Sine';
-        
-        this.instruments[3].name = 'Noise';
     }
 }
 
@@ -167,6 +155,8 @@ export class TinyEngine {
                 frequency: 0,
                 volume: 1.0,
                 phase: 0,
+                muted: false,  // Channel mute state
+                dutyCycle: 0.5,  // Per-channel duty cycle (default 50%)
                 
                 // Envelope state
                 envPhase: 0,  // 0=attack, 1=decay, 2=sustain, 3=release
@@ -174,7 +164,10 @@ export class TinyEngine {
                 envVolume: 0,
                 
                 // Effect state
+                effect: 0,
+                param: 0,
                 vibrato: { speed: 0, depth: 0, pos: 0 },
+                portamento: { target: 0 },
                 slideTarget: 0,
                 slideSpeed: 0,
                 arpeggio: { note1: 0, note2: 0 },
@@ -278,8 +271,13 @@ export class TinyEngine {
      */
     processRow() {
         const patternNum = this.song.patternOrder[this.currentPosition];
+        
+        // Auto-create pattern if it doesn't exist
+        if (!this.song.patterns[patternNum]) {
+            this.song.patterns[patternNum] = new TinyPattern();
+        }
+        
         const pattern = this.song.patterns[patternNum];
-        if (!pattern) return;
         
         for (let ch = 0; ch < MAX_CHANNELS; ch++) {
             const note = pattern.getNote(this.currentRow, ch);
@@ -290,7 +288,7 @@ export class TinyEngine {
             state.param = note.param;
             
             // Handle effects that modify behavior
-            if (note.effect === 0x0 && note.param > 0) {
+            if (note.effect === 0x1 && note.param > 0) {
                 // Arpeggio
                 const x = (note.param >> 4) & 0xF;
                 const y = note.param & 0xF;
@@ -298,10 +296,23 @@ export class TinyEngine {
                 state.arpeggio.note2 = y;
             }
             
+            // Effect 5: Portamento - set target note
+            if (note.effect === 0x5 && note.note > 0) {
+                state.portamento.target = note.note;
+                // If no note is currently playing, trigger it immediately
+                // Otherwise, let portamento slide to it
+                if (!state.active) {
+                    this.triggerNote(ch, note.note, note.instrument);
+                }
+                continue; // Skip normal note trigger
+            }
+            
             // Trigger note if present
             if (note.note > 0) {
                 this.triggerNote(ch, note.note, note.instrument);
             }
+            // Note: Don't trigger release on empty rows
+            // Notes will sustain until another note or stop is called
         }
     }
     
@@ -318,6 +329,7 @@ export class TinyEngine {
         state.frequency = NOTE_FREQUENCIES[noteNum];
         state.volume = 1.0;
         state.phase = 0;
+        state.dutyCycle = 0.5;  // Reset to default 50% duty cycle
         
         // Start envelope
         state.envPhase = 0;  // Attack
@@ -335,8 +347,8 @@ export class TinyEngine {
             
             const inst = this.song.instruments[state.instrument] || this.song.instruments[0];
             
-            // Effect 0: Arpeggio
-            if (state.effect === 0x0 && state.param > 0 && this.tickCounter > 0) {
+            // Effect 1: Arpeggio
+            if (state.effect === 0x1 && state.param > 0) {
                 const tick = this.tickCounter % 3;
                 const baseNote = state.note;
                 let arpeggioNote = baseNote;
@@ -346,18 +358,19 @@ export class TinyEngine {
                 } else if (tick === 2 && state.arpeggio.note2 > 0) {
                     arpeggioNote = baseNote + state.arpeggio.note2;
                 }
+                // tick 0: use base note (no modification)
                 
                 state.frequency = NOTE_FREQUENCIES[Math.min(95, arpeggioNote)];
             }
             
-            // Effect 1: Pitch slide up
-            if (state.effect === 0x1 && state.param > 0 && this.tickCounter > 0) {
+            // Effect 2: Pitch slide up
+            if (state.effect === 0x2 && state.param > 0 && this.tickCounter > 0) {
                 const slideAmount = state.param / 100.0;
                 state.frequency *= Math.pow(2, slideAmount / 12);
             }
             
-            // Effect 2: Pitch slide down
-            if (state.effect === 0x2 && state.param > 0 && this.tickCounter > 0) {
+            // Effect 3: Pitch slide down
+            if (state.effect === 0x3 && state.param > 0 && this.tickCounter > 0) {
                 const slideAmount = state.param / 100.0;
                 state.frequency /= Math.pow(2, slideAmount / 12);
             }
@@ -391,6 +404,40 @@ export class TinyEngine {
                     state.volume = Math.max(0.0, state.volume - slideDown / 64.0);
                 }
             }
+            
+            // Effect 5: Portamento (slide to target note)
+            if (state.effect === 0x5 && state.param > 0 && state.portamento.target > 0) {
+                const targetFreq = NOTE_FREQUENCIES[state.portamento.target];
+                const slideSpeed = state.param / 100.0;
+                
+                if (state.frequency < targetFreq) {
+                    state.frequency = Math.min(targetFreq, state.frequency * Math.pow(2, slideSpeed / 12));
+                } else if (state.frequency > targetFreq) {
+                    state.frequency = Math.max(targetFreq, state.frequency / Math.pow(2, slideSpeed / 12));
+                }
+            }
+            
+            // Effect D: Note Cut (cut note after X ticks)
+            if (state.effect === 0xD && this.tickCounter === state.param) {
+                state.active = false;
+                state.envVolume = 0;
+            }
+            
+            // Effect E: Retrigger (retrigger note every X ticks)
+            if (state.effect === 0xE && state.param > 0 && this.tickCounter > 0) {
+                if (this.tickCounter % state.param === 0) {
+                    // Retrigger by resetting phase and envelope
+                    state.phase = 0;
+                    state.envPhase = 0;
+                    state.envTime = 0;
+                    state.envVolume = 0;
+                }
+            }
+            
+            // Effect F: Duty Cycle (F00-FF = 0-100% duty cycle)
+            if (state.effect === 0xF && this.tickCounter === 0) {
+                state.dutyCycle = state.param / 255.0;
+            }
         }
     }
     
@@ -417,7 +464,8 @@ export class TinyEngine {
         
         switch (state.type) {
             case CHANNEL_SQUARE:
-                sample = state.phase < inst.dutyCycle ? 1 : -1;
+                // Use channel's duty cycle (default 50% if not set by effect)
+                sample = state.phase < state.dutyCycle ? 1 : -1;
                 break;
                 
             case CHANNEL_SAW:
@@ -481,6 +529,11 @@ export class TinyEngine {
                 
             case 2:  // Sustain
                 state.envVolume = inst.sustain;
+                // Auto-release after 2 seconds in sustain (prevents notes playing forever)
+                if (state.envTime > 2.0) {
+                    state.envPhase = 3;
+                    state.envTime = 0;
+                }
                 break;
                 
             case 3:  // Release
@@ -504,23 +557,29 @@ export class TinyEngine {
     mixAudio(numFrames) {
         const output = new Float32Array(numFrames * 2);
         
-        if (!this.isPlaying) return output;
-        
         for (let frame = 0; frame < numFrames; frame++) {
-            // Process tick if needed
-            if (this.sampleCounter >= this.samplesPerTick) {
-                this.processTick();
-                this.sampleCounter = 0;
+            // Process tick if needed (only when playing)
+            if (this.isPlaying) {
+                if (this.sampleCounter >= this.samplesPerTick) {
+                    this.processTick();
+                    this.sampleCounter = 0;
+                }
+                this.sampleCounter++;
             }
-            this.sampleCounter++;
             
-            // Mix channels
+            // Mix channels (always mix, even when not playing, for note previews)
             let left = 0, right = 0;
             
             for (let ch = 0; ch < MAX_CHANNELS; ch++) {
-                if (this.mutedChannels[ch]) continue;
+                // Check both muted arrays (for backward compatibility)
+                if (this.mutedChannels[ch] || this.channels[ch].muted) continue;
                 
-                const sample = this.getChannelSample(ch);
+                let sample = this.getChannelSample(ch);
+                
+                // Boost bass channel (sine wave is naturally quieter)
+                if (ch === 2) {
+                    sample *= 3.5;  // Significantly boost bass
+                }
                 
                 // Simple stereo panning
                 if (ch === 0 || ch === 3) {

@@ -43,8 +43,8 @@ export class UI {
             patternBg: '#0F0F0F',       // Very dark pattern area
         };
         
-        this.charWidth = 8;
-        this.charHeight = 14;
+        this.charWidth = 10;
+        this.charHeight = 16;
         
         this.mouseX = 0;
         this.mouseY = 0;

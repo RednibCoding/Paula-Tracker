@@ -8,12 +8,15 @@ import { WebAudioAdapter } from '../platform/audio-web.js';
 import { UI } from './ui.js';
 import { Renderer } from './renderer.js';
 import { InputHandler } from './inputhandler.js';
+import { Clipboard } from './clipboard.js';
+import { saveTNY, loadTNY } from './data.js';
 
 class TinyTracker {
     constructor() {
         this.canvas = document.getElementById('canvas');
         this.ui = new UI(this.canvas);
         this.renderer = new Renderer(this.ui);
+        this.clipboard = new Clipboard();
         
         // State
         this.state = {
@@ -22,8 +25,8 @@ class TinyTracker {
             playing: false,
             editMode: true,
             showHelp: false,
-            patternLoopMode: false,
-            followPlayback: true,
+            patternLoopMode: true,
+            followPlayback: false,
             currentPosition: 0,
             currentRow: 0,
             playingRow: 0,
@@ -31,13 +34,14 @@ class TinyTracker {
             currentInstrument: 0,
             cursorColumn: 0,  // 0=note, 1=instrument, 2=effect
             effectInputPos: 0, // 0=effect type, 1=param high, 2=param low
+            effectParam: 0x10, // Default effect parameter value
             mutedChannels: [false, false, false, false]
         };
         
         // Set up some default instruments
         this.setupDefaultInstruments();
         
-        this.inputHandler = new InputHandler(this.state);
+        this.inputHandler = new InputHandler(this.state, this.clipboard);
         
         // Initialize audio
         this.initAudio();
@@ -54,59 +58,51 @@ class TinyTracker {
     }
     
     setupDefaultInstruments() {
-        // Square wave instrument
-        this.state.song.instruments[0].name = 'Square Lead';
+        // Preset 0 - Square lead
         this.state.song.instruments[0].attack = 0.01;
         this.state.song.instruments[0].decay = 0.1;
         this.state.song.instruments[0].sustain = 0.7;
         this.state.song.instruments[0].release = 0.2;
         this.state.song.instruments[0].dutyCycle = 0.5;
         
-        // Sawtooth bass
-        this.state.song.instruments[1].name = 'Saw Bass';
+        // Preset 1 - Sawtooth bass
         this.state.song.instruments[1].attack = 0.005;
         this.state.song.instruments[1].decay = 0.05;
         this.state.song.instruments[1].sustain = 0.8;
         this.state.song.instruments[1].release = 0.1;
         
-        // Sine pad
-        this.state.song.instruments[2].name = 'Sine Pad';
+        // Preset 2 - Sine pad
         this.state.song.instruments[2].attack = 0.1;
         this.state.song.instruments[2].decay = 0.2;
         this.state.song.instruments[2].sustain = 0.6;
         this.state.song.instruments[2].release = 0.3;
         
-        // Noise hihat
-        this.state.song.instruments[3].name = 'Noise Hit';
+        // Preset 3 - Noise hihat
         this.state.song.instruments[3].attack = 0.001;
         this.state.song.instruments[3].decay = 0.05;
         this.state.song.instruments[3].sustain = 0.1;
         this.state.song.instruments[3].release = 0.05;
         
-        // Square short
-        this.state.song.instruments[4].name = 'Square Short';
+        // Preset 4 - Square short
         this.state.song.instruments[4].attack = 0.001;
         this.state.song.instruments[4].decay = 0.05;
         this.state.song.instruments[4].sustain = 0.3;
         this.state.song.instruments[4].release = 0.1;
         this.state.song.instruments[4].dutyCycle = 0.25;
         
-        // Saw lead
-        this.state.song.instruments[5].name = 'Saw Lead';
+        // Preset 5 - Saw lead
         this.state.song.instruments[5].attack = 0.01;
         this.state.song.instruments[5].decay = 0.15;
         this.state.song.instruments[5].sustain = 0.5;
         this.state.song.instruments[5].release = 0.2;
         
-        // Sine bass
-        this.state.song.instruments[6].name = 'Sine Bass';
+        // Preset 6 - Sine bass
         this.state.song.instruments[6].attack = 0.001;
         this.state.song.instruments[6].decay = 0.1;
         this.state.song.instruments[6].sustain = 0.7;
         this.state.song.instruments[6].release = 0.15;
         
-        // Noise drum
-        this.state.song.instruments[7].name = 'Noise Drum';
+        // Preset 7 - Noise drum
         this.state.song.instruments[7].attack = 0.001;
         this.state.song.instruments[7].decay = 0.1;
         this.state.song.instruments[7].sustain = 0.0;
@@ -116,14 +112,17 @@ class TinyTracker {
     render() {
         if (!this.running) return;
         
+        // Auto-set edit mode: enabled when not playing in song mode, or when in pattern loop mode
+        this.state.editMode = !this.state.playing || this.state.patternLoopMode;
+        
         // Update playback state
         if (this.state.playing && this.state.audio) {
             const audioState = this.state.audio.getState();
             this.state.currentPosition = audioState.position;
             this.state.playingRow = audioState.row;
             
-            // Follow playback if enabled (but don't move the cursor in edit mode)
-            if (this.state.followPlayback && !this.state.editMode) {
+            // Follow playback if enabled
+            if (this.state.followPlayback) {
                 this.state.currentRow = this.state.playingRow;
             }
         }
@@ -148,12 +147,74 @@ class TinyTracker {
                 }
                 this.state.playing = true;
             }
-        } else if (action === 'toggleEdit') {
-            this.state.editMode = !this.state.editMode;
         } else if (action === 'togglePatternLoop') {
             this.state.patternLoopMode = !this.state.patternLoopMode;
+            // Update audio engine loop state if already playing
+            if (this.state.playing && this.state.audio) {
+                this.state.audio.getEngine().setPatternLoop(this.state.patternLoopMode);
+            }
         } else if (action === 'toggleFollow') {
             this.state.followPlayback = !this.state.followPlayback;
+        } else if (action === 'insertPosition') {
+            // Insert new position after current
+            if (this.state.song.songLength < 256) {
+                this.state.song.patternOrder.splice(this.state.currentPosition + 1, 0, 0);
+                this.state.song.songLength++;
+                this.state.currentPosition++;
+            }
+        } else if (action === 'deletePosition') {
+            // Delete current position (keep at least 1)
+            if (this.state.song.songLength > 1) {
+                this.state.song.patternOrder.splice(this.state.currentPosition, 1);
+                this.state.song.songLength--;
+                this.state.currentPosition = Math.min(this.state.currentPosition, this.state.song.songLength - 1);
+            }
+        } else if (action === 'scrollSeqUp') {
+            // Scroll sequencer up (only when not playing)
+            if (!this.state.playing) {
+                this.state.currentPosition = Math.max(0, this.state.currentPosition - 1);
+            }
+        } else if (action === 'scrollSeqDown') {
+            // Scroll sequencer down (only when not playing)
+            if (!this.state.playing) {
+                this.state.currentPosition = Math.min(this.state.song.songLength - 1, this.state.currentPosition + 1);
+            }
+        } else if (action === 'scrollPatternUp') {
+            // Scroll pattern grid up
+            this.state.currentRow = Math.max(0, this.state.currentRow - 1);
+        } else if (action === 'scrollPatternDown') {
+            // Scroll pattern grid down
+            this.state.currentRow = Math.min(31, this.state.currentRow + 1);
+        } else if (action === 'saveSong') {
+            // Save current song as .tny file (with save-as dialog)
+            saveTNY(this.state.song).catch(error => {
+                console.error('Error saving song:', error);
+            });
+        } else if (action === 'loadSong') {
+            // Load .tny file
+            loadTNY().then(song => {
+                this.state.song = song;
+                this.state.currentPosition = 0;
+                this.state.currentRow = 0;
+                if (this.state.audio) {
+                    this.state.audio.setSong(song);
+                }
+                // Force a re-render
+                requestAnimationFrame(() => this.render());
+            }).catch(error => {
+                console.error('Error loading song:', error);
+            });
+        } else if (action && typeof action === 'string' && action.startsWith('toggleMute_')) {
+            // Toggle mute for a specific channel
+            const channel = parseInt(action.split('_')[1]);
+            if (channel >= 0 && channel < 4) {
+                this.state.mutedChannels[channel] = !this.state.mutedChannels[channel];
+                // Update audio engine mute state
+                if (this.state.audio) {
+                    const engine = this.state.audio.getEngine();
+                    engine.channels[channel].muted = this.state.mutedChannels[channel];
+                }
+            }
         }
         
         // Update UI state

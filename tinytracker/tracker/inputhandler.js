@@ -4,8 +4,9 @@
  */
 
 export class InputHandler {
-    constructor(state) {
+    constructor(state, clipboard) {
         this.state = state;
+        this.clipboard = clipboard;
         this.keys = {};
         
         // Note keys (piano layout)
@@ -22,13 +23,125 @@ export class InputHandler {
     handleKeyDown(e) {
         const key = e.key.toLowerCase();
         
-        // Prevent repeat
-        if (this.keys[key]) return;
+        // Allow navigation keys to repeat, but prevent repeat for note/data entry
+        const isNavigationKey = ['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'pageup', 'pagedown', 'home', 'end'].includes(key);
+        const isAltSequencerKey = e.altKey && ['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'insert', 'delete', 'd'].includes(key);
+        
+        if (!isNavigationKey && !isAltSequencerKey) {
+            // Prevent repeat for note entry and other keys
+            if (this.keys[key]) return;
+        }
         this.keys[key] = true;
         
         // Special keys that should prevent default
-        if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'tab', ' '].includes(key)) {
+        if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'tab', ' ', 'insert', 'delete'].includes(key)) {
             e.preventDefault();
+        }
+        
+        // ALT + Arrow keys: Sequencer navigation and editing
+        if (e.altKey) {
+            if (key === 'arrowup') {
+                // Move selection up in sequencer
+                this.state.currentPosition = Math.max(0, this.state.currentPosition - 1);
+                e.preventDefault();
+                return;
+            }
+            
+            if (key === 'arrowdown') {
+                // Move selection down in sequencer
+                this.state.currentPosition = Math.min(this.state.song.songLength - 1, this.state.currentPosition + 1);
+                e.preventDefault();
+                return;
+            }
+            
+            if (key === 'arrowleft') {
+                // Decrease pattern number at current position
+                const currentPat = this.state.song.patternOrder[this.state.currentPosition];
+                this.state.song.patternOrder[this.state.currentPosition] = Math.max(0, currentPat - 1);
+                e.preventDefault();
+                return;
+            }
+            
+            if (key === 'arrowright') {
+                // Increase pattern number at current position
+                const currentPat = this.state.song.patternOrder[this.state.currentPosition];
+                this.state.song.patternOrder[this.state.currentPosition] = Math.min(63, currentPat + 1);
+                e.preventDefault();
+                return;
+            }
+            
+            if (key === 'insert') {
+                // Insert new position after current
+                if (this.state.song.songLength < 256) {
+                    this.state.song.patternOrder.splice(this.state.currentPosition + 1, 0, 0);
+                    this.state.song.songLength++;
+                    this.state.currentPosition++;
+                }
+                e.preventDefault();
+                return;
+            }
+            
+            if (key === 'delete') {
+                // Delete current position
+                if (this.state.song.songLength > 1) {
+                    this.state.song.patternOrder.splice(this.state.currentPosition, 1);
+                    this.state.song.songLength--;
+                    this.state.currentPosition = Math.min(this.state.currentPosition, this.state.song.songLength - 1);
+                }
+                e.preventDefault();
+                return;
+            }
+            
+            if (key === 'd') {
+                // Duplicate current position
+                if (this.state.song.songLength < 256) {
+                    const patToDuplicate = this.state.song.patternOrder[this.state.currentPosition];
+                    this.state.song.patternOrder.splice(this.state.currentPosition + 1, 0, patToDuplicate);
+                    this.state.song.songLength++;
+                    this.state.currentPosition++;
+                }
+                e.preventDefault();
+                return;
+            }
+        }
+        
+        // CTRL + Arrow keys: Fast navigation
+        if (e.ctrlKey && !e.altKey) {
+            if (key === 'arrowup') {
+                // Jump 5 rows up
+                this.state.currentRow = Math.max(0, this.state.currentRow - 5);
+                this.state.effectInputPos = 0;
+                e.preventDefault();
+                return;
+            }
+            
+            if (key === 'arrowdown') {
+                // Jump 5 rows down
+                this.state.currentRow = Math.min(31, this.state.currentRow + 5);
+                this.state.effectInputPos = 0;
+                e.preventDefault();
+                return;
+            }
+            
+            if (key === 'arrowleft') {
+                // Move to previous channel
+                if (this.state.currentChannel > 0) {
+                    this.state.currentChannel--;
+                }
+                this.state.effectInputPos = 0;
+                e.preventDefault();
+                return;
+            }
+            
+            if (key === 'arrowright') {
+                // Move to next channel
+                if (this.state.currentChannel < 3) {
+                    this.state.currentChannel++;
+                }
+                this.state.effectInputPos = 0;
+                e.preventDefault();
+                return;
+            }
         }
         
         // Navigation
@@ -66,18 +179,18 @@ export class InputHandler {
             return;
         }
         
-        // Page up/down
+        // Page up/down - cycle through instruments
         if (key === 'pageup') {
-            this.state.currentRow = Math.max(0, this.state.currentRow - 16);
+            this.state.currentInstrument = Math.max(0, this.state.currentInstrument - 1);
             return;
         }
         
         if (key === 'pagedown') {
-            this.state.currentRow = Math.min(31, this.state.currentRow + 16);
+            this.state.currentInstrument = Math.min(7, this.state.currentInstrument + 1);
             return;
         }
         
-        // Home/End
+        // Home/End - jump to first/last row
         if (key === 'home') {
             this.state.currentRow = 0;
             return;
@@ -102,13 +215,13 @@ export class InputHandler {
         }
         
         // L key - toggle pattern loop mode
-        if (key === 'l' && !this.state.editMode) {
+        if (key === 'l') {
             this.state.patternLoopMode = !this.state.patternLoopMode;
             return;
         }
         
         // F key - toggle follow playback
-        if (key === 'f' && !this.state.editMode) {
+        if (key === 'f') {
             this.state.followPlayback = !this.state.followPlayback;
             return;
         }
@@ -125,23 +238,27 @@ export class InputHandler {
             return;
         }
         
-        // Mute channels
+        // Mute channels (prevent default for F-keys)
         if (key === 'f5') {
+            e.preventDefault();
             this.state.audio.toggleMute(0);
             this.state.mutedChannels[0] = !this.state.mutedChannels[0];
             return;
         }
         if (key === 'f6') {
+            e.preventDefault();
             this.state.audio.toggleMute(1);
             this.state.mutedChannels[1] = !this.state.mutedChannels[1];
             return;
         }
         if (key === 'f7') {
+            e.preventDefault();
             this.state.audio.toggleMute(2);
             this.state.mutedChannels[2] = !this.state.mutedChannels[2];
             return;
         }
         if (key === 'f8') {
+            e.preventDefault();
             this.state.audio.toggleMute(3);
             this.state.mutedChannels[3] = !this.state.mutedChannels[3];
             return;
@@ -161,6 +278,75 @@ export class InputHandler {
                 note.effect = 0;
                 note.param = 0;
             }
+            return;
+        }
+        
+        // Clipboard operations
+        const patternNum = this.state.song.patternOrder[this.state.currentPosition];
+        const pattern = this.state.song.patterns[patternNum];
+        
+        // Ctrl+C - Copy
+        if (key === 'c' && e.ctrlKey) {
+            e.preventDefault();
+            if (e.shiftKey) {
+                // Ctrl+Shift+C - Copy entire pattern
+                this.clipboard.copyPattern(pattern);
+            } else if (e.altKey) {
+                // Ctrl+Alt+C - Copy channel (from current row to end)
+                this.clipboard.copyChannel(pattern, this.state.currentRow, this.state.currentChannel);
+            } else {
+                // Ctrl+C - Copy current row
+                this.clipboard.copyRow(pattern, this.state.currentRow);
+            }
+            return;
+        }
+        
+        // Ctrl+X - Cut (copy + clear)
+        if (key === 'x' && e.ctrlKey) {
+            e.preventDefault();
+            if (e.shiftKey) {
+                // Ctrl+Shift+X - Cut entire pattern
+                this.clipboard.copyPattern(pattern);
+                this.clipboard.clearPattern(pattern);
+            } else if (e.altKey) {
+                // Ctrl+Alt+X - Cut channel
+                this.clipboard.copyChannel(pattern, this.state.currentRow, this.state.currentChannel);
+                for (let r = this.state.currentRow; r < 32; r++) {
+                    this.clipboard.clearCell(pattern, r, this.state.currentChannel);
+                }
+            } else {
+                // Ctrl+X - Cut current row
+                this.clipboard.copyRow(pattern, this.state.currentRow);
+                this.clipboard.clearRow(pattern, this.state.currentRow);
+            }
+            return;
+        }
+        
+        // Ctrl+V - Paste
+        if (key === 'v' && e.ctrlKey) {
+            e.preventDefault();
+            this.clipboard.paste(pattern, this.state.currentRow, this.state.currentChannel);
+            return;
+        }
+        
+        // Backspace - Clear current cell
+        if (key === 'backspace' && this.state.editMode) {
+            e.preventDefault();
+            this.clipboard.clearCell(pattern, this.state.currentRow, this.state.currentChannel);
+            return;
+        }
+        
+        // Ctrl+Insert - Insert row
+        if (key === 'insert' && e.ctrlKey) {
+            e.preventDefault();
+            this.clipboard.insertRow(pattern, this.state.currentRow);
+            return;
+        }
+        
+        // Ctrl+Delete - Delete row (shift up)
+        if (key === 'delete' && e.ctrlKey) {
+            e.preventDefault();
+            this.clipboard.deleteRow(pattern, this.state.currentRow);
             return;
         }
         
@@ -250,14 +436,15 @@ export class InputHandler {
                     this.state.currentRow = Math.min(31, this.state.currentRow + 1);
                 } else if (this.state.cursorColumn === 2) {
                     // Effect entry (3 digits: effect type + 2 param digits)
-                    // Initialize effectInputPos if not set
-                    if (!this.state.effectInputPos) {
+                    // Initialize effectInputPos if not set or invalid
+                    if (this.state.effectInputPos === undefined || this.state.effectInputPos < 0 || this.state.effectInputPos > 2) {
                         this.state.effectInputPos = 0;
                     }
                     
                     if (this.state.effectInputPos === 0) {
                         // First digit - effect type
                         note.effect = hexValue;
+                        note.param = 0; // Reset param when starting new effect
                         this.state.effectInputPos = 1;
                     } else if (this.state.effectInputPos === 1) {
                         // Second digit - high nibble of param
