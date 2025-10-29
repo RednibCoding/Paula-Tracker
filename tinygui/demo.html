@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>TinyGUI Theme Demo</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #111;
+            color: #DDD;
+            font-family: monospace;
+        }
+        canvas {
+            display: block;
+            border: 1px solid #666;
+            margin: 0 auto;
+        }
+        .controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 0 5px;
+            font-family: monospace;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        h2 {
+            text-align: center;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <h2 id="themeTitle">Theme: Default</h2>
+    
+    <div class="controls">
+        <button id="defaultBtn">Default Theme</button>
+        <button id="orangeBtn">Orange Theme</button>
+        <button id="purpleBtn">Purple Theme</button>
+    </div>
+    
+    <canvas id="canvas" width="400" height="900"></canvas>
+
+    <script type="module">
+        import * as gui from './tinygui.js';
+        
+        // Themes
+        const themes = {
+            default: {
+                name: 'Default',
+                colors: null // Use defaults
+            },
+            orange: {
+                name: 'Orange',
+                colors: {
+                    background: '#1A1209',
+                    panel: '#2A2209',
+                    button: '#3A3209',
+                    buttonHover: '#4A4209',
+                    buttonHeld: '#3A2A09',
+                    accent: '#FF8844',
+                    green: '#AAAA66',
+                }
+            },
+            purple: {
+                name: 'Purple',
+                colors: {
+                    background: '#140A1A',
+                    panel: '#241A2A',
+                    button: '#342A3A',
+                    buttonHover: '#443A4A',
+                    buttonHeld: '#342A4A',
+                    border: '#886688',
+                    accent: '#CC88FF',
+                    green: '#AA88AA',
+                }
+            }
+        };
+        
+        // State
+        let volume = 75;
+        let enabled = true;
+        let currentTheme = 'default';
+        let selectedOption = 0;
+        
+        const canvas = document.getElementById('canvas');
+        const themeTitle = document.getElementById('themeTitle');
+        
+        // Initialize with default theme
+        gui.initialize(canvas);
+        
+        // Theme switcher
+        function switchTheme(themeName) {
+            currentTheme = themeName;
+            const theme = themes[themeName];
+            themeTitle.textContent = `Theme: ${theme.name}`;
+            gui.initialize(canvas, theme.colors);
+        }
+        
+        document.getElementById('defaultBtn').addEventListener('click', () => switchTheme('default'));
+        document.getElementById('orangeBtn').addEventListener('click', () => switchTheme('orange'));
+        document.getElementById('purpleBtn').addEventListener('click', () => switchTheme('purple'));
+        
+        function draw() {
+            gui.begin();
+            
+            gui.pushLayout(gui.VERTICAL, { x: 20, y: 20, gap: 10 });
+            
+            // Title
+            gui.label('title', 'Theme Demo', { fontSize: 18 });
+            gui.label('subtitle', 'Switch themes using buttons above', { fontSize: 12 });
+            
+            gui.spacer(20);
+            
+            // Slider
+            const slider = gui.slider('vol', { 
+                width: 360, 
+                min: 0, 
+                max: 100,
+                label: 'Volume' 
+            }, volume);
+            if (slider.changed) {
+                volume = slider.value;
+            }
+            
+            gui.spacer(5);
+            
+            // Checkbox
+            const checkbox = gui.checkbox('enabled', {
+                label: 'Enabled',
+                width: 30,
+                height: 30
+            }, enabled);
+            if (checkbox.changed) {
+                enabled = checkbox.value;
+            }
+            
+            gui.spacer(5);
+            
+            // Dropdown
+            const dropdown = gui.dropdown('options', {
+                width: 360,
+                height: 30,
+                label: 'Select an option',
+                items: ['Option 1', 'Option 2', 'Option 3', 'Option 4', 'Option 5']
+            }, selectedOption);
+            if (dropdown.changed) {
+                selectedOption = dropdown.selectedIndex;
+            }
+            
+            gui.spacer(15);
+            
+            // Buttons
+            gui.pushLayout(gui.HORIZONTAL, { gap: 10 });
+            const btn1 = gui.button('btn1', 'Increase +10', { width: 113, height: 35 });
+            const btn2 = gui.button('btn2', 'Decrease -10', { width: 113, height: 35 });
+            const btn3 = gui.button('btn3', 'Reset', { width: 113, height: 35 });
+            gui.popLayout();
+            
+            if (btn1.clicked) volume = Math.min(100, volume + 10);
+            if (btn2.clicked) volume = Math.max(0, volume - 10);
+            if (btn3.clicked) { volume = 75; enabled = true; }
+            
+            gui.spacer(20);
+            
+            // Accordion
+            gui.accordion('accordion1', {
+                width: 360,
+                height: 30,
+                label: 'Expand for Options'
+            }, false, () => {
+                gui.label('accordionInfo', 'Content inside accordion!', { fontSize: 12 });
+                gui.spacer(5);
+                
+                const innerBtn1 = gui.button('innerBtn1', 'Inner Button 1', { width: 330, height: 25 });
+                const innerBtn2 = gui.button('innerBtn2', 'Inner Button 2', { width: 330, height: 25 });
+                const innerBtn3 = gui.button('innerBtn3', 'Inner Button 3', { width: 330, height: 25 });
+                
+                if (innerBtn1.clicked) console.log('Inner Button 1 clicked');
+                if (innerBtn2.clicked) console.log('Inner Button 2 clicked');
+                if (innerBtn3.clicked) console.log('Inner Button 3 clicked');
+            });
+            
+            gui.spacer(20);
+            
+            // Scrollable list
+            gui.scrollBox('scrollList', {
+                width: 360,
+                height: 150,
+                contentHeight: 500,
+                label: 'Scrollable List (use mouse wheel or drag scrollbar)'
+            }, () => {
+                // Content inside the scroll box
+                for (let i = 1; i <= 20; i++) {
+                    const itemBtn = gui.button(`listItem${i}`, `List Item ${i}`, { 
+                        width: 320, 
+                        height: 25 
+                    });
+                    if (itemBtn.clicked) {
+                        console.log(`Clicked item ${i}`);
+                    }
+                }
+            });
+            
+            gui.spacer(20);
+            
+            // Info panel
+            gui.rect({ width: 360, height: 120, color: gui.getColors().panel });
+            gui.label('status', 'Current Status:', { 
+                x: -350, 
+                y: -105, 
+                fontSize: 14 
+            });
+            gui.label('volumeLabel', `Volume: ${Math.round(volume)}`, { 
+                x: -350, 
+                y: -80, 
+                fontSize: 12 
+            });
+            gui.label('enabledLabel', `Enabled: ${enabled ? 'YES' : 'NO'}`, { 
+                x: -350, 
+                y: -60, 
+                fontSize: 12 
+            });
+            gui.label('selectedLabel', `Selected: ${dropdown.selectedItem || 'None'}`, { 
+                x: -350, 
+                y: -40, 
+                fontSize: 12 
+            });
+            gui.label('themeLabel', `Theme: ${themes[currentTheme].name}`, { 
+                x: -350, 
+                y: -20, 
+                fontSize: 12 
+            });
+            
+            gui.popLayout();
+            
+            gui.end();
+            
+            requestAnimationFrame(draw);
+        }
+        
+        draw();
+    </script>
+</body>
+</html>
