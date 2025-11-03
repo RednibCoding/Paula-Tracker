@@ -39,11 +39,14 @@ https://youtu.be/FpLkmfKNvbI
 
 ### Running Locally
 
-```bash
-cd Paula-Tracker
-python3 -m http.server 8080
-# Open http://localhost:8080 in your browser
-```
+1. Clone or download this repository
+2. cd Paula-Tracker
+2. Start a local server (required for ES6 modules):
+   - **Python 3**: `python -m http.server 8000`
+   - **Python 2**: `python -m SimpleHTTPServer 8000`
+   - **VS Code**: Use the Live Server extension
+   - **Node.js**: `npx http-server`
+3. Open `http://localhost:8000` in your browser
 
 ### Keyboard Controls
 
